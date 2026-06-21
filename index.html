@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Buddy — Your Caring Language Friend 🌟</title>
+<style>
+  :root {
+    /* Cyberpunk Space palette */
+    --space-black: #05030f;
+    --space-deep: #0a0820;
+    --card: rgba(18, 14, 46, 0.72);
+    --card-border: rgba(124, 92, 255, 0.45);
+    --neon-blue: #00e5ff;
+    --neon-purple: #b14bff;
+    --neon-pink: #ff3df0;
+    --primary: #b14bff;
+    --primary-soft: #7a4bff;
+    --bubble-bot: rgba(0, 229, 255, 0.10);
+    --bubble-user: linear-gradient(135deg, #7a3bff, #b14bff);
+    --text: #e9e6ff;
+    --muted: #8b86c9;
+    --ok: #00ffb2;
+    --warn: #ffd24b;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: "Orbitron", "Segoe UI", "Rajdhani", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(177,75,255,.25), transparent 60%),
+      radial-gradient(1000px 500px at -10% 110%, rgba(0,229,255,.18), transparent 55%),
+      linear-gradient(160deg, var(--space-black), var(--space-deep) 60%, #04030c);
+    overflow: hidden;
+  }
+
+  /* ---- Animated starfield + nebula drift ---- */
+  body::before, body::after {
+    content: "";
+    position: fixed; inset: -50%;
+    z-index: 0;
+    pointer-events: none;
+    background-repeat: repeat;
+  }
+  body::before {
+    background-image:
+      radial-gradient(1.5px 1.5px at 20% 30%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 70% 60%, #cfe9ff, transparent),
+      radial-gradient(1px 1px at 40% 80%, #fff, transparent),
+      radial-gradient(2px 2px at 85% 15%, #d8b4ff, transparent),
+      radial-gradient(1px 1px at 55% 45%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 10% 70%, #b9f6ff, transparent);
+    background-size: 600px 600px;
+    opacity: .8;
+    animation: drift 120s linear infinite, twinkle 4s ease-in-out infinite alternate;
+  }
+  body::after {
+    background-image:
+      radial-gradient(1px 1px at 30% 50%, #fff, transparent),
+      radial-gradient(1px 1px at 80% 80%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 60% 20%, #ffd6fb, transparent);
+    background-size: 400px 400px;
+    opacity: .5;
+    animation: drift 200s linear infinite reverse;
+  }
+  @keyframes drift { from { transform: translate3d(0,0,0); } to { transform: translate3d(-300px,-300px,0); } }
+  @keyframes twinkle { from { opacity: .55; } to { opacity: .95; } }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  /* Glassy neon panels */
+  header.topbar, main.chat, .voicebar {
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+  }
+  header.topbar {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    padding: 14px 18px;
+    box-shadow: 0 0 24px rgba(177,75,255,.30), inset 0 0 18px rgba(0,229,255,.08);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo { font-size: 34px; line-height: 1; filter: drop-shadow(0 0 8px var(--neon-purple)); animation: float 5s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0) rotate(0deg);} 50% { transform: translateY(-5px) rotate(6deg);} }
+  .titles h1 {
+    margin: 0; font-size: 22px; letter-spacing: 1.5px; text-transform: uppercase;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 0 18px rgba(177,75,255,.45);
+    animation: hueShift 8s linear infinite;
+  }
+  @keyframes hueShift { from { filter: hue-rotate(0deg);} to { filter: hue-rotate(360deg);} }
+  .titles p { margin: 2px 0 0; font-size: 12px; color: var(--muted); letter-spacing: .5px; }
+  .toolbar {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  select, .btn {
+    font-family: inherit;
+    font-size: 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,229,255,.45);
+    padding: 8px 10px;
+    background: rgba(10,8,32,.6);
+    color: var(--text);
+    cursor: pointer;
+    transition: box-shadow .2s, border-color .2s, transform .1s;
+  }
+  select option { background: #0a0820; color: var(--text); }
+  select:hover, .btn:hover { box-shadow: 0 0 14px rgba(0,229,255,.55); border-color: var(--neon-blue); }
+  .btn:active { transform: scale(.96); }
+  .btn.toggle.on { background: rgba(0,255,178,.18); color: var(--ok); border-color: var(--ok); box-shadow: 0 0 14px rgba(0,255,178,.5); }
+  .btn.toggle.off { background: rgba(10,8,32,.6); color: var(--muted); }
+
+  main.chat {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    box-shadow: 0 0 30px rgba(0,229,255,.18), inset 0 0 24px rgba(177,75,255,.10);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--neon-purple) transparent;
+  }
+  .messages::-webkit-scrollbar { width: 8px; }
+  .messages::-webkit-scrollbar-thumb { background: linear-gradient(var(--neon-purple), var(--neon-blue)); border-radius: 8px; }
+  .row { display: flex; gap: 8px; align-items: flex-end; animation: warpIn .35s cubic-bezier(.2,.8,.2,1); }
+  @keyframes warpIn { from { opacity: 0; transform: translateY(12px) scale(.97);} to { opacity: 1; transform: none;} }
+  .row.user { justify-content: flex-end; }
+  .avatar { font-size: 26px; filter: drop-shadow(0 0 6px rgba(0,229,255,.6)); }
+  .bubble {
+    max-width: 78%;
+    padding: 12px 15px;
+    border-radius: 16px;
+    font-size: 16px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid transparent;
+  }
+  .bot .bubble {
+    background: var(--bubble-bot);
+    border-color: rgba(0,229,255,.35);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 0 16px rgba(0,229,255,.18);
+    color: #d9faff;
+  }
+  .user .bubble {
+    background: var(--bubble-user);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 0 18px rgba(177,75,255,.45);
+  }
+  .bubble[dir="rtl"] { text-align: right; }
+  .typing .bubble { color: var(--neon-blue); font-style: italic; animation: pulseGlow 1.2s ease-in-out infinite; }
+  @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 10px rgba(0,229,255,.2);} 50% { box-shadow: 0 0 22px rgba(0,229,255,.6);} }
+
+  .composer {
+    border-top: 1px solid rgba(124,92,255,.25);
+    padding: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .composer input {
+    flex: 1;
+    font-family: inherit;
+    font-size: 16px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,229,255,.40);
+    background: rgba(5,3,15,.7);
+    color: var(--text);
+    outline: none;
+    transition: box-shadow .2s, border-color .2s;
+  }
+  .composer input::placeholder { color: #6f6aa8; }
+  .composer input:focus { border-color: var(--neon-purple); box-shadow: 0 0 16px rgba(177,75,255,.55); }
+  .send {
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 0 18px rgba(177,75,255,.55);
+    transition: transform .1s, box-shadow .2s, filter .2s;
+  }
+  .send:hover { filter: brightness(1.15); box-shadow: 0 0 26px rgba(0,229,255,.7); }
+  .send:active { transform: scale(.95); }
+  .send:disabled { opacity: .5; cursor: default; box-shadow: none; }
+  .mic.listening { background: rgba(255,61,240,.25); border-color: var(--neon-pink); box-shadow: 0 0 18px rgba(255,61,240,.7); animation: pulseGlow 1s infinite; }
+
+  .voicebar {
+    background: linear-gradient(135deg, rgba(122,59,255,.55), rgba(0,229,255,.30));
+    border: 1px solid rgba(0,229,255,.45);
+    color: #fff;
+    border-radius: 18px;
+    padding: 12px 16px;
+    box-shadow: 0 0 26px rgba(177,75,255,.40);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .voicebar::after {
+    content: "";
+    position: absolute; top: 0; left: -60%;
+    width: 40%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+    transform: skewX(-20deg);
+    animation: sweep 4.5s ease-in-out infinite;
+  }
+  @keyframes sweep { 0% { left: -60%; } 60%,100% { left: 130%; } }
+  .voicebar-text { display: flex; flex-direction: column; line-height: 1.25; position: relative; z-index: 1; }
+  .voicebar-text strong { font-size: 15px; text-shadow: 0 0 10px rgba(0,229,255,.6); }
+  .voicebar-text span { font-size: 12px; opacity: .92; }
+  .voice-badge {
+    margin-left: auto;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(0,229,255,.5);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+    position: relative; z-index: 1;
+    box-shadow: 0 0 12px rgba(0,229,255,.4);
+  }
+  /* ElevenLabs widget styling */
+  elevenlabs-convai {
+    position: fixed;
+    bottom: 18px;
+    right: 18px;
+    z-index: 9999;
+    --elevenlabs-convai-widget-width: 380px;
+    --elevenlabs-convai-widget-height: 560px;
+  }
+  @media (max-width: 768px) {
+    elevenlabs-convai {
+      bottom: 0; right: 0; left: 0;
+      --elevenlabs-convai-widget-width: 100%;
+    }
+  }
+
+  .hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 2px 0 6px;
+    text-shadow: 0 0 8px rgba(177,75,255,.4);
+  }
+  @media (max-width: 520px) {
+    .titles h1 { font-size: 17px; }
+    .titles p { display: none; }
+    .bubble { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="logo">🚀</div>
+    <div class="titles">
+      <h1>Buddy</h1>
+      <p>Your cosmic language companion</p>
+    </div>
+    <div class="toolbar">
+      <label class="visually-hidden" for="lang">Language</label>
+      <select id="lang" title="Choose the language you want to practice">
+        <option value="en">🇬🇧 English</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="pt-BR">🇧🇷 Português (BR)</option>
+        <option value="ja">🇯🇵 日本語</option>
+        <option value="hi">🇮🇳 हिन्दी</option>
+        <option value="ar">🇸🇦 العربية</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       REAL AI VOICE (ElevenLabs Conversational AI)
+       A natural human-like voice that TALKS and LISTENS live.
+       This is NOT browser text-to-speech / speech synthesis.
+       Tap the orb button to start a live voice conversation.
+       ============================================================ -->
+  <div class="voicebar">
+    <div class="voicebar-text">
+      <strong>🎙️ Talk out loud with Buddy</strong>
+      <span>Open a live voice link across the galaxy — real voice, real listening.</span>
+    </div>
+    <span class="voice-badge" id="voiceStatus">Set up needed</span>
+  </div>
+
+  <main class="chat">
+    <div id="messages" class="messages" aria-live="polite"></div>
+    <form id="composer" class="composer" autocomplete="off">
+      <input id="input" type="text" placeholder="Type your message in any language..." />
+      <button id="send" class="send" type="submit">Send</button>
+    </form>
+  </main>
+  <div class="hint">Buddy gently says hello if you go quiet for a while. 💛</div>
+</div>
+
+<!-- ============================================================================
+     REAL AI VOICE WIDGET (ElevenLabs Conversational AI)
+     Natural human-like voice that talks AND listens live — NOT browser TTS.
+     1. Create a (free) ElevenLabs account.
+     2. Create a Conversational AI Agent (set its language to "multilingual"
+        and paste Buddy's caring kids-tutor persona + the 10 stories).
+     3. Copy the Agent ID and paste it into ELEVENLABS_AGENT_ID below.
+     The agent must be PUBLIC with authentication disabled for the widget.
+     ============================================================================ -->
+<elevenlabs-convai
+  id="buddyVoice"
+  agent-id="agent_5301kvf03gdye3581x3zhxfa7dxj"
+  variant="expanded"
+  dismissible="true"
+  avatar-orb-color-1="#00e5ff"
+  avatar-orb-color-2="#b14bff"
+  action-text="Talk out loud with Buddy 🎙️"
+  start-call-text="Start talking"
+  end-call-text="Stop"
+  listening-text="I'm listening…"
+  speaking-text="Buddy is talking…"
+  server-location="global"
+></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+
+<script>
+/* ============================================================================
+   ELEVENLABS VOICE — paste your public Agent ID here.
+   ========================================================================== */
+const ELEVENLABS_AGENT_ID = "agent_5301kvf03gdye3581x3zhxfa7dxj";
+
+(function setupVoiceWidget() {
+  const widget = document.getElementById("buddyVoice");
+  const status = document.getElementById("voiceStatus");
+  if (!widget) return;
+
+  const configured = ELEVENLABS_AGENT_ID && !ELEVENLABS_AGENT_ID.startsWith("REPLACE_");
+  if (configured) {
+    widget.setAttribute("agent-id", ELEVENLABS_AGENT_ID);
+    if (status) status.textContent = "Tap the orb to talk →";
+  } else {
+    // Hide the widget until an Agent ID is provided so users don't see a broken orb.
+    widget.style.display = "none";
+    if (status) status.textContent = "agent_5301kvf03gdye3581x3zhxfa7dxj";
+  }
+
+  widget.addEventListener("conversationStarted", () => { if (status) status.textContent = "🎙️ Talking with Buddy…"; });
+  widget.addEventListener("conversationEnded", () => { if (status) status.textContent = "Tap the orb to talk →"; });
+})();
+</script>
+
+<script>
+/* ============================================================================
+   CONFIG — point this at your n8n Chat Trigger public endpoint.
+   The workflow MUST be PUBLISHED (active) for this URL to respond.
+   ========================================================================== */
+const CHAT_URL = "https://smilenow8.app.n8n.cloud/webhook/ef087976-bbff-4ea6-8d8d-4e0f683e2304/chat";
+
+// How long (ms) of silence before Buddy gently speaks up. 1 min 30 sec = 90000.
+const INACTIVITY_MS = 90000;
+
+// Exact signal the workflow listens for to send a gentle re-engagement nudge.
+const NUDGE_SIGNAL = "__INACTIVITY_NUDGE__";
+
+/* ============================================================================
+   STATE
+   ========================================================================== */
+// Stable session id so n8n memory keeps the conversation context per browser.
+let sessionId = localStorage.getItem("buddy_session_id");
+if (!sessionId) {
+  sessionId = "buddy-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9);
+  localStorage.setItem("buddy_session_id", sessionId);
+}
+
+let inactivityTimer = null;
+let nudgeAlreadySent = false; // only nudge once per idle period
+let sending = false;
+
+const RTL_LANGS = new Set(["ar"]);
+
+/* ============================================================================
+   DOM
+   ========================================================================== */
+const messagesEl = document.getElementById("messages");
+const inputEl = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+const formEl = document.getElementById("composer");
+const langSel = document.getElementById("lang");
+
+/* ============================================================================
+   UI helpers
+   ========================================================================== */
+function currentLang() { return langSel.value; }
+
+function addMessage(text, who) {
+  const row = document.createElement("div");
+  row.className = "row " + who;
+
+  const avatar = document.createElement("div");
+  avatar.className = "avatar";
+  avatar.textContent = who === "bot" ? "🤖" : "🧑\u200d🚀";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = text;
+  if (who === "bot" && RTL_LANGS.has(currentLang())) bubble.setAttribute("dir", "rtl");
+
+  if (who === "user") { row.appendChild(bubble); row.appendChild(avatar); }
+  else { row.appendChild(avatar); row.appendChild(bubble); }
+
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return bubble;
+}
+
+function showTyping() {
+  const row = document.createElement("div");
+  row.className = "row bot typing";
+  row.id = "typingRow";
+  row.innerHTML = '<div class="avatar">🤖</div><div class="bubble">Buddy is computing…</div>';
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function hideTyping() {
+  const t = document.getElementById("typingRow");
+  if (t) t.remove();
+}
+
+/* ============================================================================
+   INACTIVITY TIMER (1 min 30 sec)
+   ========================================================================== */
+function resetInactivityTimer() {
+  nudgeAlreadySent = false;
+  if (inactivityTimer) clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(onInactive, INACTIVITY_MS);
+}
+function onInactive() {
+  if (nudgeAlreadySent || sending) return;
+  nudgeAlreadySent = true;
+  // Send the silent nudge signal — Buddy replies first to gently re-engage.
+  sendToBuddy(NUDGE_SIGNAL, { silentUserMessage: true });
+}
+
+/* ============================================================================
+   SEND / RECEIVE
+   ========================================================================== */
+async function sendToBuddy(text, opts) {
+  opts = opts || {};
+  if (sending) return;
+  sending = true;
+  sendBtn.disabled = true;
+
+  // Show the user's own message unless it is the hidden inactivity nudge.
+  if (!opts.silentUserMessage) addMessage(text, "user");
+
+  showTyping();
+
+  const payload = {
+    action: "sendMessage",
+    sessionId: sessionId,
+    chatInput: text,
+    // Extra hint for the AI about which language the child is practicing.
+    metadata: { targetLanguage: currentLang() }
+  };
+
+  try {
+    const res = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    hideTyping();
+
+    if (!res.ok) {
+      addMessage("Oops — I couldn't reach Buddy right now. Please try again in a moment. 💛", "bot");
+      return;
+    }
+
+    // n8n Chat Trigger (lastNode mode) returns JSON like { output: "..." }.
+    let reply = "";
+    const raw = await res.text();
+    try {
+      const data = JSON.parse(raw);
+      reply = data.output || data.text || data.response || data.message ||
+              (typeof data === "string" ? data : "");
+    } catch {
+      reply = raw; // plain text fallback
+    }
+    if (!reply) reply = "…";
+
+    addMessage(reply, "bot");
+  } catch (err) {
+    hideTyping();
+    addMessage("Oops — something went wrong reaching Buddy. Please try again. 💛", "bot");
+  } finally {
+    sending = false;
+    sendBtn.disabled = false;
+    resetInactivityTimer();
+  }
+}
+
+/* ============================================================================
+   EVENTS
+   ========================================================================== */
+formEl.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = inputEl.value.trim();
+  if (!text) return;
+  inputEl.value = "";
+  sendToBuddy(text);
+});
+
+// Any interaction resets the idle timer.
+["keydown", "mousedown", "touchstart"].forEach(evt =>
+  document.addEventListener(evt, resetInactivityTimer, { passive: true })
+);
+
+langSel.addEventListener("change", () => {
+  inputEl.dir = RTL_LANGS.has(currentLang()) ? "rtl" : "ltr";
+});
+
+/* ============================================================================
+   START
+   ========================================================================== */
+const WELCOME = "Hi there! 👋 I can chat with you in English, Spanish, French, Brazilian Portuguese, Japanese, Hindi, or Arabic — and I know 10 fun kid stories. Which language would you like to practice today?";
+window.addEventListener("load", () => {
+  addMessage(WELCOME, "bot");
+  resetInactivityTimer();
+});
+</script>
+</body>
+</html>
